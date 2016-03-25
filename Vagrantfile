@@ -28,6 +28,10 @@ VAGRANTFILE_API_VERSION = "2"
 SETTINGS_FILE = "local.yml"
 SETTINGS_EXAMPLES_FILE = "local.example.yml"
 
+# provisioner entrypoints
+SHELL_PROVISIONER_ENTRYPOINT = "vagrant/provisioning/hypernode.sh"
+ANSIBLE_PROVISIONER_ENTRYPOINT = "vagrant/provisioning/hypernode.yml"
+
 # abort if vagrant-hostmanager is not installed
 if !Vagrant.has_plugin?("vagrant-hostmanager")
   abort "Please install the 'vagrant-hostmanager' module"
@@ -60,7 +64,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
   end
 
-  config.vm.provision "shell", path: "vagrant/provisioning/hypernode.sh"
+  unless ! File.exist?(SHELL_PROVISIONER_ENTRYPOINT)
+    config.vm.provision "shell", path: SHELL_PROVISIONER_ENTRYPOINT
+  end
+
+  unless ! File.exist?(ANSIBLE_PROVISIONER_ENTRYPOINT)
+    config.vm.provision "ansible" do |ansible| 
+       ansible.playbook = ANSIBLE_PROVISIONER_ENTRYPOINT
+    end
+  end
 
   config.vm.provider :virtualbox do |vbox, override|
     override.vm.network "private_network", type: "dhcp"
